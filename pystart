@@ -1,0 +1,86 @@
+#!/bin/bash
+
+set -x
+
+# create a new directory
+create_project_dir() {
+    mkdir "$1" || (echo "Failed to create project directory $1" && exit)
+}
+
+# setup virtualenv and install pytest
+setup_virtualenv() {
+    virtualenv .venv || (echo "Failed to create .venv. Ensure you have virtualenv command installed" && exit)
+    source .venv/bin/activate || (echo "Failed to activate .venv" && exit)
+    pip install pytest || (echo "Failed to install pytest" && exit)
+}
+
+# create project structure
+setup_project() {
+    mkdir libs tests
+    touch main.py libs/__init__.py .env
+    pip freeze > requirements.txt
+}
+
+# initialize git
+init_git() {
+    if [ -d .git ]; then
+        echo "Project already under git"
+        return
+    fi
+
+    git init .
+    echo ".venv" > .gitignore
+    git add .
+    git commit -m "[Setup] Start project"
+}
+
+# prompt user to open project
+prompt() {
+    echo "Project created successfully"
+    echo "Remember to export PYTHONPATH=\$(pwd) to run tests and source .venv/bin/activate to activate virtualenv"
+}
+
+# check if project name is provided
+project_check() {
+    if [ -z "$project_name" ]; then
+        echo "Usage: pystart <project_name>"
+        echo "Check pystart -h for more info"
+        exit
+    elif [[ -d "$1" && "$1" != . && "$1" != .. ]]; then
+        echo "Project $1 already exists"
+        exit
+    elif [ -d "$1"/.venv ]; then
+        echo "$1 is already a python project"
+        exit
+    fi
+}
+
+
+# help info with arg parsing
+while [[ $# -gt 0 ]]
+do
+    case "$1" in
+        -h|--help) 
+            echo "Usage: pystart <project_name>"
+            echo "Create a new python project with pytest"
+            exit
+            ;;
+        -*|--*)
+            echo "Unkonwn option $1"
+            exit
+            ;;
+        *)
+            break
+    esac
+done
+
+project_name="$1"
+project_check "$project_name"
+
+# create project
+[[ "$project_name" != . && "$project_name" != .. ]] && create_project_dir "$project_name"
+cd "$project_name" || (echo "Failed to cd into project directory $1" && exit)
+setup_virtualenv
+setup_project
+init_git
+prompt "$(pwd)"
