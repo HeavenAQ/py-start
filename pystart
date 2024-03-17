@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -x
-
 # create a new directory
 create_project_dir() {
     mkdir "$1" || (echo "Failed to create project directory $1" && exit)
